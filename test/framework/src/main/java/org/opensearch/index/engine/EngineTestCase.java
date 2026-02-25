@@ -781,28 +781,22 @@ public abstract class EngineTestCase extends OpenSearchTestCase {
         Sort indexSort,
         LongSupplier globalCheckpointSupplier
     ) {
-        return config(
-            indexSettings,
-            store,
-            translogPath,
-            mergePolicy,
-            refreshListener,
-            indexSort,
-            globalCheckpointSupplier,
-            globalCheckpointSupplier == null ? null : () -> RetentionLeases.EMPTY
-        );
+        return config(indexSettings, store, translogPath, mergePolicy, refreshListener, indexSort, globalCheckpointSupplier, null);
     }
 
     public EngineConfig config(
-        final IndexSettings indexSettings,
-        final Store store,
-        final Path translogPath,
-        final MergePolicy mergePolicy,
-        final ReferenceManager.RefreshListener refreshListener,
-        final Sort indexSort,
-        final LongSupplier globalCheckpointSupplier,
-        final Supplier<RetentionLeases> retentionLeasesSupplier
+        IndexSettings indexSettings,
+        Store store,
+        Path translogPath,
+        MergePolicy mergePolicy,
+        ReferenceManager.RefreshListener refreshListener,
+        Sort indexSort,
+        LongSupplier globalCheckpointSupplier,
+        Engine.Warmer warmer
     ) {
+        final Engine.EventListener eventListener = new Engine.EventListener() {
+        }; // we don't need to notify anybody in this test
+
         return config(
             indexSettings,
             store,
@@ -812,8 +806,10 @@ public abstract class EngineTestCase extends OpenSearchTestCase {
             null,
             indexSort,
             globalCheckpointSupplier,
-            retentionLeasesSupplier,
-            new NoneCircuitBreakerService()
+            globalCheckpointSupplier == null ? null : () -> RetentionLeases.EMPTY,
+            new NoneCircuitBreakerService(),
+            eventListener,
+            warmer
         );
     }
 
@@ -868,7 +864,8 @@ public abstract class EngineTestCase extends OpenSearchTestCase {
             maybeGlobalCheckpointSupplier,
             maybeGlobalCheckpointSupplier == null ? null : () -> RetentionLeases.EMPTY,
             breakerService,
-            eventListener
+            eventListener,
+            null
         );
     }
 
@@ -883,7 +880,8 @@ public abstract class EngineTestCase extends OpenSearchTestCase {
         final @Nullable LongSupplier maybeGlobalCheckpointSupplier,
         final @Nullable Supplier<RetentionLeases> maybeRetentionLeasesSupplier,
         final CircuitBreakerService breakerService,
-        final Engine.EventListener eventListener
+        final Engine.EventListener eventListener,
+        final Engine.Warmer warmer
     ) {
         final IndexWriterConfig iwc = newIndexWriterConfig();
         final TranslogConfig translogConfig = new TranslogConfig(
@@ -926,7 +924,7 @@ public abstract class EngineTestCase extends OpenSearchTestCase {
         return new EngineConfig.Builder().shardId(shardId)
             .threadPool(threadPool)
             .indexSettings(indexSettings)
-            .warmer(null)
+            .warmer(warmer)
             .store(store)
             .mergePolicy(mergePolicy)
             .analyzer(iwc.getAnalyzer())

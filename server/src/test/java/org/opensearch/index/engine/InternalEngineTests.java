@@ -3469,7 +3469,8 @@ public class InternalEngineTests extends EngineTestCase {
                     globalCheckpoint::get,
                     retentionLeasesHolder::get,
                     new NoneCircuitBreakerService(),
-                    eventListener
+                    eventListener,
+                    null
                 )
             );
 
@@ -3563,7 +3564,8 @@ public class InternalEngineTests extends EngineTestCase {
                     globalCheckpoint::get,
                     retentionLeasesHolder::get,
                     new NoneCircuitBreakerService(),
-                    eventListener
+                    eventListener,
+                    null
                 )
             );
 
@@ -3660,7 +3662,8 @@ public class InternalEngineTests extends EngineTestCase {
                     globalCheckpoint::get,
                     retentionLeasesHolder::get,
                     new NoneCircuitBreakerService(),
-                    eventListener
+                    eventListener,
+                    null
                 )
             );
 
@@ -7061,7 +7064,18 @@ public class InternalEngineTests extends EngineTestCase {
         Set<Long> existingSeqNos = new HashSet<>();
         store = createStore();
         engine = createEngine(
-            config(indexSettings, store, createTempDir(), newMergePolicy(), null, null, globalCheckpoint::get, retentionLeasesHolder::get)
+            config(
+                indexSettings,
+                store,
+                createTempDir(),
+                newMergePolicy(),
+                null,
+                null,
+                null,
+                globalCheckpoint::get,
+                retentionLeasesHolder::get,
+                new NoneCircuitBreakerService()
+            )
         );
         assertThat(engine.getMinRetainedSeqNo(), equalTo(0L));
         long lastMinRetainedSeqNo = engine.getMinRetainedSeqNo();
